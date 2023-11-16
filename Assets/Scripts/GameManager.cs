@@ -3,6 +3,7 @@ using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
@@ -20,13 +21,28 @@ public class GameManager : MonoBehaviour
     {
         InitScore();
 
-        OnSixRolled += OnRollEndCallback;
-        _rollButton.onClick.AddListener(_dice.Roll);
-        _rollButton.onClick.AddListener(() =>_rollButton.transform.DOScale(Vector3.one * 0.8f, 0.1f).SetEase(Ease.Flash));
-        _rollButton.onClick.AddListener(() =>_rollButton.interactable = false);
+        OnSixRolled += OnSixRollEndCallback;
+
+        _rollButton.onClick.AddListener(delegate
+        {
+            _dice.Roll();
+            DOTween.Kill("rollButtonCta");
+            _rollButton.transform.rotation = Quaternion.Euler(0,0,0);
+            _rollButton.transform.DOScale(Vector3.one * 0.8f, 0.1f).SetEase(Ease.Flash);
+            _rollButton.interactable = false;
+        });
+
+        ButtonShakeAnimation();
     }
 
-    private void OnRollEndCallback()
+    private void ButtonShakeAnimation()
+    {
+        _rollButton.transform.DOShakeRotation(0.6f, new Vector3(0, 0, 5f), 50, 45, true, ShakeRandomnessMode.Harmonic)
+            .SetId("rollButtonCta").OnComplete(
+                delegate { DOVirtual.DelayedCall(Random.Range(4f, 6f), ButtonShakeAnimation).SetId("rollButtonCta"); });
+    }
+
+    private void OnSixRollEndCallback()
     {
         IncrementScore();
     }
@@ -50,5 +66,6 @@ public class GameManager : MonoBehaviour
     {
         _rollButton.transform.DOScale(Vector3.one, 0.25f).SetEase(Ease.OutBack);
         _rollButton.interactable = true;
+        DOVirtual.DelayedCall(Random.Range(4f, 6f), ButtonShakeAnimation).SetId("rollButtonCta");
     }
 }
